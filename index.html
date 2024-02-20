@@ -1,1 +1,132 @@
 
+<html>
+
+<head>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        #canvas {
+            border: solid red 5px;
+            height: 450px;
+            width: 300px;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <canvas height="1500" width="1000" id="canvas"></canvas>
+    <button id="downloadButton">Download Canvas</button>
+
+
+</body>
+
+<script>
+
+    const canvas = document.getElementById('canvas');
+    const downloadButton = document.getElementById('downloadButton');
+
+    // HTML canvas element
+    const ctx = canvas.getContext('2d');
+
+    async function drawImage(imageUrl, relativeX, relativeY, scale = 1) {
+        const response = await fetch(imageUrl);
+        const imageBlob = await response.blob();
+        const img = await createImageBitmap(imageBlob);
+
+        const imageWidth = img.width * scale;
+        const imageHeight = img.height * scale;
+
+        // Calculate absolute position based on relative coordinates
+        const absoluteX = canvas.width * relativeX;
+        const absoluteY = canvas.height * relativeY;
+
+        // Draw the image on the canvas with transparency preserved
+        ctx.drawImage(img, absoluteX, absoluteY, imageWidth, imageHeight);
+    }
+
+
+    async function drawImageFitCanvas(imageUrl, preserveAspectRatio = true) {
+        const response = await fetch(imageUrl);
+        const imageBlob = await response.blob();
+        const img = await createImageBitmap(imageBlob);
+
+        const canvasAspectRatio = canvas.width / canvas.height;
+        const imageAspectRatio = img.width / img.height;
+
+        let newWidth, newHeight;
+
+        if (preserveAspectRatio) {
+            if (canvasAspectRatio > imageAspectRatio) {
+                // Fit to width, maintain aspect ratio
+                newHeight = canvas.height;
+                newWidth = newHeight * imageAspectRatio;
+            } else {
+                // Fit to height, maintain aspect ratio
+                newWidth = canvas.width;
+                newHeight = newWidth / imageAspectRatio;
+            }
+        } else {
+            // Stretch image to fit canvas without aspect ratio preservation
+            newWidth = canvas.width;
+            newHeight = canvas.height;
+        }
+
+        // Calculate absolute position based on centered placement
+        const absoluteX = (canvas.width - newWidth) / 2;
+        const absoluteY = (canvas.height - newHeight) / 2;
+
+        // Draw the image on the canvas
+        ctx.drawImage(img, 0, 0, img.width, img.height, absoluteX, absoluteY, newWidth, newHeight);
+    }
+
+    function drawText(text, relativeX, relativeY, fontSize = 16, fontFamily = "Arial", color = "black", alignment = "left") {
+
+        const font = `normal 400 ${fontSize}px ${fontFamily}`
+
+        ctx.font = font;
+
+        ctx.fillStyle = color;
+        ctx.textAlign = alignment;
+
+        const absoluteX = canvas.width * relativeX;
+        const absoluteY = canvas.height * relativeY;
+
+        ctx.fillText(text, absoluteX, absoluteY);
+    }
+
+    downloadButton.addEventListener('click', () => {
+        const dataURL = canvas.toDataURL('image/png');
+
+        // Create a temporary anchor element
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = 'canvas_image.png';
+        link.click();
+
+        // Clean up the temporary element
+        link.remove();
+    });
+
+    const googleColors = { blue: '#4285F4', red: '#DB4437', yellow: '#F4B400', green: '#0F9D58' }
+
+
+    async function draw() {
+        await drawImageFitCanvas('Test_card.png', false); // 50% size at 20% width, 30% height
+        await drawImage('pika.png', 0.1, 0.1, 4); // 120% size at 70% width, 50% height
+        await drawImage('googles.png', 0.05, 0.35, 0.2); // 50% size at 20% width, 30% height
+        drawText("99", 0.1, 0.9, 160, "Open Sans")
+        drawText("86", 0.4, 0.9, 160, "Open Sans", color = googleColors.blue)
+
+    }
+    draw()
+
+</script>
+
+
+</html>
